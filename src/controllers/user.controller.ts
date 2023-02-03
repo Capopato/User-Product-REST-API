@@ -1,37 +1,35 @@
 import { Request, Response, NextFunction } from "express";
 import User from "../models/user.models";
 import mongoose from "mongoose";
+import { setPassword } from "../models/user.models";
 
 const createUser = async (req: Request, res: Response, next: NextFunction) => {
-  /** TODO
-   * hash the password to increase security
-   */
-
   /** get values from req.body */
   const name: string = req.body.name;
   const email: string = req.body.email;
-  const password: string = req.body.password;
-  const passwordCheck: string = req.body.passwordCheck;
+  const unHashedpassword: string = req.body.password;
+  let passwordCheck: string = req.body.passwordCheck;
   const date: Date = new Date();
 
+  /** Protect password using the setPassword function*/
+  const password = setPassword(unHashedpassword);
+  passwordCheck = password;
+
   /** check if passwords match */
-  if (password == passwordCheck && password.length >= 5) {
-    const user = new User({
-      userId: new mongoose.Types.ObjectId(),
-      name,
-      email,
-      password,
-      passwordCheck,
-      date,
-    });
-    try {
-      await user.save();
-      res.status(200).json({ user });
-    } catch (error) {
-      res.status(500).json({ error });
-    }
-  } else {
-    res.status(500).send("Passwords do not match or is too short. Try again.");
+  const user = new User({
+    userId: new mongoose.Types.ObjectId(),
+    name,
+    email,
+    password,
+    passwordCheck,
+    date,
+  });
+
+  try {
+    await user.save();
+    res.status(200).json({ user });
+  } catch (error) {
+    res.status(500).json({ error });
   }
 };
 

@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
+import crypto from "crypto";
 
 /** userModel that extends Document options from mongoose */
 export interface userModel extends Document {
@@ -10,7 +11,7 @@ export interface userModel extends Document {
 }
 
 /**  */
-const userSchema: Schema = new Schema(
+export const userSchema: Schema = new Schema(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
@@ -33,5 +34,26 @@ const userSchema: Schema = new Schema(
     timestamps: true,
   }
 );
+
+/** Function to hash a password */
+export const setPassword = (userSchema.methods.setPassword = function (
+  password: string
+) {
+  // userSchema.methods.setPassword = async function (password: string) {
+  /** Create a unique hash */
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = crypto
+    .pbkdf2Sync(password, salt, 1000, 64, "sha512")
+    .toString("hex");
+  return hash;
+});
+
+/** Function to validate a hashed password */
+userSchema.methods.validatePassword = function (password: string) {
+  let hash = crypto
+    .pbkdf2Sync(password, this.salt, 1000, 64, "sha512")
+    .toString("hex");
+  return this.hash == hash;
+};
 
 export default mongoose.model<userModel>("User", userSchema);
