@@ -33,6 +33,5 @@ export const userValidateSchema = {
       "string.empty": `Password cannot be empty`,
       "any.required": `Password is required`,
     }),
-    passwordCheck: Joi.string().valid(Joi.ref("password")).required(),
   }),
 };

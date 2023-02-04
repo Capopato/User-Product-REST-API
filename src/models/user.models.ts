@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document } from "mongoose";
 import crypto from "crypto";
+import bcrypt from "bcrypt";
 
 /** userModel that extends Document options from mongoose */
 export interface userModel extends Document {
@@ -18,15 +19,10 @@ export const userSchema: Schema = new Schema(
     password: {
       type: String,
       required: true,
-      minLenght: [5, "Password needs to be 5 chars or more."],
     },
     passwordCheck: {
       type: String,
       required: true,
-      minLenght: [
-        5,
-        "PasswordCheck needs to be 5 chars or more and needs to match password.",
-      ],
     },
     date: { type: Date, default: Date.now() },
   },
@@ -35,25 +31,19 @@ export const userSchema: Schema = new Schema(
   }
 );
 
-/** Function to hash a password */
-export const setPassword = (userSchema.methods.setPassword = function (
-  password: string
-) {
-  // userSchema.methods.setPassword = async function (password: string) {
-  /** Create a unique hash */
-  const salt = crypto.randomBytes(16).toString("hex");
-  const hash = crypto
-    .pbkdf2Sync(password, salt, 1000, 64, "sha512")
-    .toString("hex");
-  return hash;
-});
+userSchema.pre("save", async function (next) {
+  let user = this as userModel;
 
-/** Function to validate a hashed password */
-userSchema.methods.validatePassword = function (password: string) {
-  let hash = crypto
-    .pbkdf2Sync(password, this.salt, 1000, 64, "sha512")
-    .toString("hex");
-  return this.hash == hash;
-};
+  /** check if the password from user is modified. if not > next() */
+  if (!user.isModified("password")) {
+    return next();
+  }
+  /** Declare amount of salt rounds */
+  const salt = await bcrypt.genSalt(10);
+  const hashPassword = bcrypt.hashSync(user.password, salt);
+  user.password = hashPassword;
+  user.passwordCheck = hashPassword;
+  return next();
+});
 
 export default mongoose.model<userModel>("User", userSchema);

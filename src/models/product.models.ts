@@ -14,7 +14,7 @@ const productSchema: Schema = new Schema(
     title: { type: String, required: true, unique: true },
     description: { type: String, required: true },
     price: { type: Number, required: true },
-    productionYear: { type: Number, required: false },
+    productionYear: { type: Number, required: true },
   },
   {
     timestamps: true,
